@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURUM Admin</title>
+    <style>
+        body { background: #050805; color: #fff; font-family: sans-serif; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: #111811; padding: 20px; border-radius: 12px; border: 1px solid #1a251a; }
+        h1 { color: #ffd700; margin-bottom: 20px; }
+        h2 { color: #00ff88; margin: 20px 0 10px; }
+        input, button, select, textarea { padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #1a251a; background: #0a0e0a; color: #fff; width: 100%; box-sizing: border-box;}
+        button { background: #00ff88; color: #000; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background: #00cc6a; }
+        button.danger { background: #ff4444; color: #fff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #1a251a; font-size: 12px;}
+        th { color: #889988; }
+        .tab { display: none; }
+        .tab.active { display: block; }
+        .tabs button { background: #1a251a; color: #fff; margin-right: 5px; width: auto;}
+        .tabs button.active { background: #00ff88; color: #000; }
+        .btn-small { width: auto; padding: 5px 10px; font-size: 11px; margin: 2px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ AURUM Admin Panel</h1>
+        
+        <div id="login-section">
+            <input type="password" id="admin-password" placeholder="Contraseña de administrador">
+            <button onclick="login()">Entrar</button>
+        </div>
+
+        <div id="admin-panel" style="display: none;">
+            <div class="tabs">
+                <button class="active" onclick="showTab('tasks')">Tareas</button>
+                <button onclick="showTab('stats')">Estadísticas</button>
+                <button onclick="showTab('users')">Usuarios</button>
+                <button onclick="showTab('withdrawals')">Retiros</button>
+                <button onclick="showTab('broadcast')">Broadcast</button>
+            </div>
+
+            <div id="tab-tasks" class="tab active">
+                <h2>Agregar Tarea</h2>
+                <input type="text" id="task-title" placeholder="Nombre de la tarea">
+                <input type="text" id="task-link" placeholder="Enlace (https://t.me/... o bot?start=...)">
+                <input type="number" id="task-reward" placeholder="Recompensa USDT" step="0.01" value="0.50">
+                <select id="task-type">
+                    <option value="channel">Unirse a Canal (0.50 USDT)</option>
+                    <option value="bot">Unirse a Bot (1.20 USDT)</option>
+                </select>
+                <button onclick="addTask()">➕ Agregar Tarea</button>
+                <h2>Tareas Activas</h2>
+                <div id="tasks-list"></div>
+            </div>
+
+            <div id="tab-stats" class="tab">
+                <h2>Rendimiento de Tareas</h2>
+                <div id="stats-list"></div>
+            </div>
+
+            <div id="tab-users" class="tab">
+                <h2>Gestionar Usuarios</h2>
+                <div id="users-list"></div>
+            </div>
+
+            <div id="tab-withdrawals" class="tab">
+                <h2>Solicitudes de Retiro</h2>
+                <div id="withdrawals-list"></div>
+            </div>
+
+            <div id="tab-broadcast" class="tab">
+                <h2>Enviar Mensaje a Todos</h2>
+                <p style="color: #889988; font-size: 12px; margin-bottom: 10px;">El mensaje se enviará directo al chat del bot de todos los usuarios.</p>
+                <textarea id="broadcast-msg" placeholder="Escribe el mensaje aquí... (Acepta HTML como <b>negrita</b>)" rows="5" style="width: 100%; background: #0a0e0a; color: #fff; border: 1px solid #1a251a; border-radius: 8px; padding: 10px;"></textarea>
+                <button onclick="sendBroadcast()">📢 Enviar Mensaje</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let adminPassword = '';
+
+        function login() {
+            adminPassword = document.getElementById('admin-password').value;
+            fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: adminPassword })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('admin-panel').style.display = 'block';
+                    loadTasks(); loadUsers(); loadWithdrawals(); loadStats();
+                } else {
+                    alert('Contraseña incorrecta');
+                }
+            });
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function loadTasks() {
+            fetch('/api/admin/tasks').then(res => res.json()).then(data => {
+                document.getElementById('tasks-list').innerHTML = data.map(task => `
+                    <div style="display: flex; justify-content: space-between; padding: 10px; background: #0a0e0a; border-radius: 8px; margin-bottom: 5px;">
+                        <span>${task.title} - ${task.reward} USDT</span>
+                        <button class="danger btn-small" onclick="deleteTask(${task.id})">🗑️</button>
+                    </div>
+                `).join('');
+            });
+        }
+
+        function addTask() {
+            const title = document.getElementById('task-title').value;
+            const link = document.getElementById('task-link').value;
+            const reward = document.getElementById('task-reward').value;
+            const type = document.getElementById('task-type').value;
+            fetch('/api/admin/tasks', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, link, reward, type })
+            }).then(() => {
+                loadTasks(); loadStats();
+                document.getElementById('task-title').value = '';
+                document.getElementById('task-link').value = '';
+            });
+        }
+
+        function deleteTask(id) {
+            fetch(`/api/admin/tasks/${id}`, { method: 'DELETE' }).then(() => { loadTasks(); loadStats(); });
+        }
+
+        function loadStats() {
+            fetch('/api/admin/stats').then(res => res.json()).then(data => {
+                document.getElementById('stats-list').innerHTML = `
+                    <table>
+                        <tr><th>Tarea</th><th>Recompensa</th><th>Completados</th></tr>
+                        ${data.map(s => `<tr><td>${s.title}</td><td>${s.reward} USDT</td><td style="color: #00ff88; font-weight: bold;">${s.completados}</td></tr>`).join('')}
+                    </table>
+                `;
+            });
+        }
+
+        function loadUsers() {
+            fetch('/api/admin/users').then(res => res.json()).then(data => {
+                document.getElementById('users-list').innerHTML = `
+                    <table>
+                        <tr><th>ID</th><th>Usuario</th><th>Saldo</th><th>Refs</th><th>Acciones</th></tr>
+                        ${data.map(u => `
+                            <tr>
+                                <td>${u.id}</td>
+                                <td>${u.username}</td>
+                                <td>${u.balance.toFixed(2)}</td>
+                                <td>${u.referidos}</td>
+                                <td>
+                                    <button class="btn-small" onclick="addBalance(${u.id})">+Saldo</button>
+                                    <button class="btn-small" onclick="addRefs(${u.id})">+Refs</button>
+                                    <button class="btn-small danger" onclick="toggleBan(${u.id}, ${u.banned})">${u.banned ? 'Desbanear' : 'Banear'}</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                `;
+            });
+        }
+
+        function addBalance(userId) {
+            const amount = parseFloat(prompt("¿Cuánto saldo deseas añadir?"));
+            if (!amount || amount <= 0) return;
+            fetch('/api/admin/add-balance', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, amount })
+            }).then(() => loadUsers());
+        }
+
+        function addRefs(userId) {
+            const amount = parseInt(prompt("¿Cuántos referidos deseas añadir?"));
+            if (!amount || amount <= 0) return;
+            fetch('/api/admin/add-refs', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, amount })
+            }).then(() => loadUsers());
+        }
+
+        function toggleBan(userId, banned) {
+            fetch(`/api/admin/ban/${userId}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ banned: banned ? 0 : 1 })
+            }).then(() => loadUsers());
+        }
+
+        function loadWithdrawals() {
+            fetch('/api/admin/withdrawals').then(res => res.json()).then(data => {
+                document.getElementById('withdrawals-list').innerHTML = `
+                    <table>
+                        <tr><th>Usuario</th><th>Monto</th><th>Wallet</th><th>Acción</th></tr>
+                        ${data.map(w => `
+                            <tr>
+                                <td>${w.username}</td>
+                                <td>${w.amount} USDT</td>
+                                <td>${w.wallet}</td>
+                                <td>
+                                    <button class="btn-small" onclick="approveWithdrawal(${w.id})">✅</button>
+                                    <button class="btn-small danger" onclick="rejectWithdrawal(${w.id})">❌</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                `;
+            });
+        }
+
+        function approveWithdrawal(id) {
+            fetch(`/api/admin/withdrawals/${id}/approve`, { method: 'POST' }).then(() => loadWithdrawals());
+        }
+
+        function rejectWithdrawal(id) {
+            fetch(`/api/admin/withdrawals/${id}/reject`, { method: 'POST' }).then(() => loadWithdrawals());
+        }
+
+        function sendBroadcast() {
+            const msg = document.getElementById('broadcast-msg').value;
+            if (!msg) return alert('Escribe un mensaje primero');
+            if (!confirm('¿Seguro que quieres enviar este mensaje a TODOS los usuarios?')) return;
+            fetch('/api/admin/broadcast', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            }).then(res => res.json()).then(data => {
+                alert(data.message || data.error);
+                if (data.success) document.getElementById('broadcast-msg').value = '';
+            });
+        }
+    </script>
+</body>
+  </html>
