@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AURUM Rewards</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="ticker-wrap">
+        <div class="ticker" id="ticker-text">Cargando retiros...</div>
+    </div>
+
+    <div id="intro-screen" class="intro-screen">
+        <div class="door-container">
+            <img src="https://raw.githubusercontent.com/hyuuknbctuuhfd/El_puto_egipto/main/public/puerta.png" alt="Templo" class="temple-door">
+        </div>
+        <div class="intro-content">
+            <h1 class="intro-title">AURUM</h1>
+            <p class="intro-subtitle">THE PHARAOH'S TREASURE</p>
+            <button class="btn-enter" onclick="enterApp()">ENTER THE TEMPLE</button>
+        </div>
+    </div>
+
+    <div id="main-app" class="app-container" style="display: none;">
+        <header>
+            <div class="logo-container">
+                <img src="https://raw.githubusercontent.com/hyuuknbctuuhfd/El_puto_egipto/main/public/mascara%20de%20pesta%C3%B1as.png" alt="AURUM" class="logo">
+                <div>
+                    <h1 class="gold-text">AURUM</h1>
+                    <p class="subtitle">PHARAOH'S REWARDS</p>
+                </div>
+            </div>
+            <div class="capital-display">
+                <img src="https://raw.githubusercontent.com/hyuuknbctuuhfd/El_puto_egipto/main/public/reloj.png" alt="Capital" class="capital-icon">
+                <span id="capital-amount">500,000</span> <span class="currency">USDT</span>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div id="page-home" class="page-content active">
+                <div class="card balance-card">
+                    <div class="balance-header"><span>TOTAL BALANCE</span></div>
+                    <div class="balance-amount">
+                        <img src="https://raw.githubusercontent.com/hyuuknbctuuhfd/El_puto_egipto/main/public/escarabajo.png" class="coin-img" alt="USDT">
+                        <span id="balance">0.00</span> <span class="currency">USDT</span>
+                    </div>
+                    <p class="urgent-text">Complete tasks, invite friends, and take as much loot as you can before the vault empties.</p>
+                </div>
+                <div class="deco-image-container">
+                    <img src="https://raw.githubusercontent.com/hyuuknbctuuhfd/El_puto_egipto/main/public/halcon.png" class="floating-img" alt="Horus">
+                </div>
+                <div class="action-buttons">
+                    <button class="btn-3d" onclick="switchTab('tasks')">START TASKS</button>
+                </div>
+            </div>
+
+            <div id="page-tasks" class="page-content">
+                <h2 class="page-title">TASKS OF THE PHARAOH</h2>
+                <div id="tasks-container"></div>
+            </div>
+
+            <div id="page-referrals" class="page-content">
+                <h2 class="page-title">ROYAL INVITATIONS</h2>
+                <div class="deco-image-container">
+                    <img src="https://raw.githubusercontent.com/hyuuknbctuuhfd/El_puto_egipto/main/public/cofre.png" class="floating-img" alt="Cofre">
+                </div>
+                <div class="ref-link-box">
+                    <div style="font-size: 11px; color: #889988; margin-bottom: 5px;">YOUR INVITATION LINK</div>
+                    <div id="ref-link-text" style="font-size: 13px; color: #ffd700; word-break: break-all;">Cargando...</div>
+                </div>
+                <div class="ref-actions">
+                    <button class="btn-3d" onclick="shareTelegram()">✈️ SHARE</button>
+                    <button class="btn-3d" style="background:#333; border-color:#555;" onclick="copyLink()">📋 COPY</button>
+                </div>
+                <div class="card" style="margin-top: 20px;">
+                    <h3 style="color: #ffd700; margin-bottom: 10px; text-align: center;">REFERRAL MILESTONES</h3>
+                    <div class="milestone"><span>10 Active Friends</span> <span>+3 USDT</span></div>
+                    <div class="milestone"><span>30 Active Friends</span> <span>+9 USDT</span></div>
+                    <div class="milestone"><span>50 Active Friends</span> <span>+15 USDT</span></div>
+                    <div class="milestone"><span>100 Active Friends</span> <span>+30 USDT</span></div>
+                </div>
+                <div class="card" style="margin-top: 20px;">
+                    <h3 style="color: #ffd700; margin-bottom: 10px; text-align: center;">TOP INVITERS</h3>
+                    <div id="ranking-list" class="ranking-list"></div>
+                </div>
+            </div>
+
+            <div id="page-withdraw" class="page-content">
+                <h2 class="page-title">CLAIM YOUR TREASURE</h2>
+                <div class="card">
+                    <div class="balance-header"><span>AVAILABLE TO WITHDRAW</span></div>
+                    <div class="balance-amount" style="font-size: 28px; margin-bottom: 20px;">
+                        <img src="https://raw.githubusercontent.com/hyuuknbctuuhfd/El_puto_egipto/main/public/centro.png" class="coin-img" style="width: 30px; height: 30px;" alt="USDT">
+                        <span id="withdraw-balance">0.00</span> <span class="currency">USDT</span>
+                    </div>
+                    <h3 style="font-size: 14px; margin-bottom: 10px; color:#ffd700;">SELECT NETWORK</h3>
+                    <div class="network-selector">
+                        <button class="network-btn active" onclick="selectNetwork('BEP20', this)">BEP20 (BSC)</button>
+                        <button class="network-btn" onclick="selectNetwork('TRC20', this)">TRC20 (Tron)</button>
+                        <button class="network-btn" onclick="selectNetwork('ERC20', this)">ERC20 (ETH)</button>
+                    </div>
+                    <h3 style="font-size: 14px; margin: 15px 0 10px 0; color:#ffd700;">WALLET ADDRESS</h3>
+                    <input type="text" id="wallet-input" class="wallet-input" placeholder="Paste your wallet address here...">
+                    <div class="withdraw-details">
+                        <div class="detail-row"><span>Minimum Withdrawal</span><span>5.00 USDT</span></div>
+                        <div class="detail-row" style="border-top: 1px dashed #333; padding-top: 5px; margin-top: 5px;"><span>You Receive</span><span id="receive-amount" style="color: #ffd700; font-weight: bold;">0.00 USDT</span></div>
+                    </div>
+                    <button class="btn-3d" style="width: 100%; margin-top: 10px;" onclick="requestWithdraw()">WITHDRAW</button>
+                </div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchTab('home', this)"><span class="nav-icon">🏛️</span><span class="nav-text">HOME</span></button>
+            <button class="nav-item" onclick="switchTab('tasks', this)"><span class="nav-icon">📜</span><span class="nav-text">TASKS</span></button>
+            <button class="nav-item" onclick="switchTab('referrals', this)"><span class="nav-icon">👑</span><span class="nav-text">INVITE</span></button>
+            <button class="nav-item" onclick="switchTab('withdraw', this)"><span class="nav-icon">💰</span><span class="nav-text">WITHDRAW</span></button>
+        </nav>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+                  </html>
